@@ -222,9 +222,9 @@ export function mergeObjects(obj1, obj2, concatArrays = false) {
   // Recursively merge deeply nested objects.
   var acc = Object.assign({}, obj1); // Prevent mutation of source object.
   return Object.keys(obj2).reduce((acc, key) => {
-    const left = obj1[key],
+    const left = obj1 ? obj1[key] : {},
       right = obj2[key];
-    if (obj1.hasOwnProperty(key) && isObject(right)) {
+    if (obj1 && obj1.hasOwnProperty(key) && isObject(right)) {
       acc[key] = mergeObjects(left, right, concatArrays);
     } else if (concatArrays && Array.isArray(left) && Array.isArray(right)) {
       acc[key] = left.concat(right);
@@ -406,7 +406,7 @@ function findSchemaDefinition($ref, definitions = {}) {
 
 // In the case where we have to implicitly create a schema, it is useful to know what type to use
 //  based on the data we are defining
-const guessType = function guessType(value) {
+export const guessType = function guessType(value) {
   if (Array.isArray(value)) {
     return "array";
   } else if (typeof value === "string") {

@@ -16,6 +16,7 @@ import {
   shouldRender,
   toDateString,
   toIdSchema,
+  guessType,
 } from "../src/utils";
 
 describe("utils", () => {
@@ -180,6 +181,41 @@ describe("utils", () => {
           level1: {
             level2: { leaf1: 1, leaf2: 2, leaf3: 3, leaf4: 4 },
           },
+        });
+      });
+
+      it("should support nested values in formData", () => {
+        const schema = {
+          type: "object",
+          properties: {
+            level1: {
+              type: "object",
+              properties: {
+                level2: {
+                  oneOf: [
+                    {
+                      type: "object",
+                      properties: {
+                        leaf1: {
+                          type: "string",
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        };
+        const formData = {
+          level1: {
+            level2: {
+              leaf1: "a",
+            },
+          },
+        };
+        expect(getDefaultFormState(schema, formData)).eql({
+          level1: { level2: { leaf1: "a" } },
         });
       });
 
@@ -420,6 +456,12 @@ describe("utils", () => {
 
     it("should override the first object with the values from the second", () => {
       expect(mergeObjects({ a: 1 }, { a: 2 })).eql({ a: 2 });
+    });
+
+    it("should override non-existing values of the first object with the values from the second", () => {
+      expect(mergeObjects({ a: { b: undefined } }, { a: { b: { c: 1 } } })).eql(
+        { a: { b: { c: 1 } } }
+      );
     });
 
     it("should recursively merge deeply nested objects", () => {
@@ -1279,6 +1321,32 @@ describe("utils", () => {
       expect(deepEquals({ foo: { bar() {} } }, { foo: { bar() {} } })).eql(
         true
       );
+    });
+  });
+
+  describe("guessType()", () => {
+    it("should guess the type of array values", () => {
+      expect(guessType([1, 2, 3])).eql("array");
+    });
+
+    it("should guess the type of string values", () => {
+      expect(guessType("foobar")).eql("string");
+    });
+
+    it("should guess the type of null values", () => {
+      expect(guessType(null)).eql("null");
+    });
+
+    it("should treat undefined values as null values", () => {
+      expect(guessType()).eql("null");
+    });
+
+    it("should guess the type of boolean values", () => {
+      expect(guessType(true)).eql("boolean");
+    });
+
+    it("should guess the type of object values", () => {
+      expect(guessType({})).eql("object");
     });
   });
 });
